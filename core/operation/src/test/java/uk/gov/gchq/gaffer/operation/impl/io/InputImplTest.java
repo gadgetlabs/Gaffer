@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Crown Copyright
+ * Copyright 2017 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package uk.gov.gchq.gaffer.operation.impl.io;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.collect.Sets;
 import org.junit.Test;
 import uk.gov.gchq.gaffer.exception.SerialisationException;
-import uk.gov.gchq.gaffer.jsonserialisation.JSONSerialiser;
-import uk.gov.gchq.gaffer.operation.Operation;
 import uk.gov.gchq.gaffer.operation.OperationTest;
 import uk.gov.gchq.gaffer.operation.data.CustomVertex;
 import uk.gov.gchq.koryphe.ValidationResult;
@@ -29,14 +31,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-
-public class InputImplTest extends OperationTest {
-    private static final JSONSerialiser SERIALISER = new JSONSerialiser();
+public class InputImplTest extends OperationTest<InputImpl> {
 
     @Test
-    @Override
     public void shouldSerialiseAndDeserialiseOperation() throws SerialisationException {
         // Given
         final String requiredField1 = "value1";
@@ -78,7 +75,7 @@ public class InputImplTest extends OperationTest {
                 .requiredField2(requiredField2)
                 .optionalField1(optionalField1)
                 .optionalField2(optionalField2)
-                .input("1", "2", "3", "4")
+                .input(input)
                 .build();
 
         // Then
@@ -107,10 +104,7 @@ public class InputImplTest extends OperationTest {
         final ValidationResult validationResult = op.validate();
 
         // Then
-        assertEquals(
-                Sets.newHashSet("requiredField2 is required"),
-                validationResult.getErrors()
-        );
+        assertTrue(validationResult.getErrorString().contains("requiredField2 is required"));
     }
 
     @Test
@@ -146,8 +140,8 @@ public class InputImplTest extends OperationTest {
     }
 
     @Override
-    public Class<? extends Operation> getOperationClass() {
-        return InputImpl.class;
+    protected InputImpl getTestObject() {
+        return new InputImpl();
     }
 }
 

@@ -29,6 +29,10 @@ import uk.gov.gchq.gaffer.data.elementdefinition.exception.SchemaException;
 import uk.gov.gchq.gaffer.jobtracker.JobDetail;
 import uk.gov.gchq.gaffer.jobtracker.JobStatus;
 import uk.gov.gchq.gaffer.jobtracker.JobTracker;
+import uk.gov.gchq.gaffer.named.operation.AddNamedOperation;
+import uk.gov.gchq.gaffer.named.operation.DeleteNamedOperation;
+import uk.gov.gchq.gaffer.named.operation.GetAllNamedOperations;
+import uk.gov.gchq.gaffer.named.operation.NamedOperation;
 import uk.gov.gchq.gaffer.operation.Operation;
 import uk.gov.gchq.gaffer.operation.OperationChain;
 import uk.gov.gchq.gaffer.operation.OperationException;
@@ -85,6 +89,10 @@ import uk.gov.gchq.gaffer.store.operation.handler.generate.GenerateObjectsHandle
 import uk.gov.gchq.gaffer.store.operation.handler.job.GetAllJobDetailsHandler;
 import uk.gov.gchq.gaffer.store.operation.handler.job.GetJobDetailsHandler;
 import uk.gov.gchq.gaffer.store.operation.handler.job.GetJobResultsHandler;
+import uk.gov.gchq.gaffer.store.operation.handler.named.AddNamedOperationHandler;
+import uk.gov.gchq.gaffer.store.operation.handler.named.DeleteNamedOperationHandler;
+import uk.gov.gchq.gaffer.store.operation.handler.named.GetAllNamedOperationsHandler;
+import uk.gov.gchq.gaffer.store.operation.handler.named.NamedOperationHandler;
 import uk.gov.gchq.gaffer.store.operation.handler.output.ToArrayHandler;
 import uk.gov.gchq.gaffer.store.operation.handler.output.ToCsvHandler;
 import uk.gov.gchq.gaffer.store.operation.handler.output.ToEntitySeedsHandler;
@@ -130,7 +138,7 @@ public abstract class Store {
     /**
      * The schema - contains the type of {@link uk.gov.gchq.gaffer.data.element.Element}s to be stored and how to aggregate the elements.
      */
-    private Schema schema;
+    protected Schema schema;
 
     /**
      * The store properties - contains specific configuration information for the store - such as database connection strings.
@@ -316,6 +324,16 @@ public abstract class Store {
         return initialJobDetail;
     }
 
+    /**
+     * Executes an operation chain with the provided context, without updating the
+     * job tracker.
+     *
+     * @param operationChain operation chain to execute
+     * @param context        the context containing the user
+     * @param <O>            the output type
+     * @return the result of the operation chain
+     * @throws OperationException if an error occurs whilst executing the operation chain.
+     */
     public <O> O _execute(final OperationChain<O> operationChain, final Context context) throws OperationException {
         final OperationChain<O> optimisedOperationChain = prepareOperationChain(operationChain, context);
         return handleOperationChain(optimisedOperationChain, context);
@@ -456,7 +474,7 @@ public abstract class Store {
 
         if (!validationResult.isValid()) {
             throw new SchemaException("Schema is not valid. "
-                                              + validationResult.getErrorString());
+                    + validationResult.getErrorString());
         }
     }
 
@@ -464,8 +482,8 @@ public abstract class Store {
         if ((serialiser != null) && !requiredParentSerialiserClass.isInstance(serialiser)) {
             validationResult.addError(
                     String.format("Schema serialiser (%s) is not instance of %s",
-                                  serialiser.getClass().getSimpleName(),
-                                  requiredParentSerialiserClass.getSimpleName()));
+                            serialiser.getClass().getSimpleName(),
+                            requiredParentSerialiserClass.getSimpleName()));
         }
     }
 
@@ -629,9 +647,9 @@ public abstract class Store {
                 ((Input) op).setInput(result);
             } catch (final ClassCastException e) {
                 throw new UnsupportedOperationException("Operation chain is not compatible. "
-                                                                + op.getClass().getName()
-                                                                + " cannot take " + result.getClass().getName()
-                                                                + " as an input", e);
+                        + op.getClass().getName()
+                        + " cannot take " + result.getClass().getName()
+                        + " as an input", e);
             }
         }
     }
@@ -684,6 +702,14 @@ public abstract class Store {
         addOperationHandler(ToSet.class, new ToSetHandler<>());
         addOperationHandler(ToStream.class, new ToStreamHandler<>());
         addOperationHandler(ToVertices.class, new ToVerticesHandler());
+
+        // Named operation
+        if (null != CacheServiceLoader.getService()) {
+            addOperationHandler(NamedOperation.class, new NamedOperationHandler());
+            addOperationHandler(AddNamedOperation.class, new AddNamedOperationHandler());
+            addOperationHandler(GetAllNamedOperations.class, new GetAllNamedOperationsHandler());
+            addOperationHandler(DeleteNamedOperation.class, new DeleteNamedOperationHandler());
+        }
 
         // ElementComparison
         addOperationHandler(Max.class, new MaxHandler());
