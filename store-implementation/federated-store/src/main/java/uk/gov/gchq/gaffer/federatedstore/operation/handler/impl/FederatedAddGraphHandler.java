@@ -41,12 +41,17 @@ import uk.gov.gchq.gaffer.store.operation.handler.OperationHandler;
 public class FederatedAddGraphHandler implements OperationHandler<AddGraph> {
     @Override
     public Void doOperation(final AddGraph operation, final Context context, final Store store) throws OperationException {
-        ((FederatedStore) store).add(
-                new Graph.Builder()
-                        .graphId(operation.getGraphId())
-                        .addSchema(operation.getSchema())
-                        .storeProperties(StoreProperties.loadStoreProperties(operation.getProperties()))
-                        .build());
+        final FederatedStore fedStore = (FederatedStore) store;
+        if (operation.getSchema() == null || operation.getProperties() == null) {
+            fedStore.add(operation.getGraphId());
+        } else {
+            final Graph.Builder builder = new Graph.Builder()
+                    .graphId(operation.getGraphId())
+                    .addSchema(operation.getSchema())
+                    .storeProperties(StoreProperties.loadStoreProperties(operation.getProperties()))
+                    .library(store.getGraphLibrary());
+            fedStore.add(builder.build());
+        }
         return null;
     }
 }
