@@ -28,12 +28,14 @@ import uk.gov.gchq.gaffer.data.element.Element;
 import uk.gov.gchq.gaffer.data.element.id.EntityId;
 import uk.gov.gchq.gaffer.data.elementdefinition.view.View;
 import uk.gov.gchq.gaffer.federatedstore.operation.AddGraph;
+import uk.gov.gchq.gaffer.federatedstore.operation.GetAllGraphID;
 import uk.gov.gchq.gaffer.federatedstore.operation.RemoveGraph;
 import uk.gov.gchq.gaffer.federatedstore.operation.handler.FederatedOperationAddElementsHandler;
 import uk.gov.gchq.gaffer.federatedstore.operation.handler.FederatedOperationHandler;
 import uk.gov.gchq.gaffer.federatedstore.operation.handler.impl.FederatedAddGraphHandler;
 import uk.gov.gchq.gaffer.federatedstore.operation.handler.impl.FederatedGetAdjacentIdsHandler;
 import uk.gov.gchq.gaffer.federatedstore.operation.handler.impl.FederatedGetAllElementsHandler;
+import uk.gov.gchq.gaffer.federatedstore.operation.handler.impl.FederatedGetAllGraphIDHandler;
 import uk.gov.gchq.gaffer.federatedstore.operation.handler.impl.FederatedGetElementsHandler;
 import uk.gov.gchq.gaffer.federatedstore.operation.handler.impl.FederatedRemoveGraphHandler;
 import uk.gov.gchq.gaffer.graph.Graph;
@@ -182,6 +184,10 @@ public class FederatedStore extends Store {
             builders.put(id, builder);
         }
         return builders;
+    }
+
+    public Set<String> getAllGraphIds() {
+        return graphs.keySet();
     }
 
     private void _add(final Graph graph) {
@@ -379,6 +385,7 @@ public class FederatedStore extends Store {
                 .filter(op -> !Output.class.isAssignableFrom(op) && !AddElements.class.equals(op))
                 .forEach(op -> addOperationHandler(op, new FederatedOperationHandler()));
 
+        addOperationHandler(GetAllGraphID.class, new FederatedGetAllGraphIDHandler());
         addOperationHandler(AddGraph.class, new FederatedAddGraphHandler());
         addOperationHandler(RemoveGraph.class, new FederatedRemoveGraphHandler());
     }
